@@ -2,8 +2,8 @@ from unittest import TestCase, main
 from unittest.mock import patch
 
 import tests.sync.mocks as mocks
+from src.sync.url_parser import URLParser
 from tests.static.known_results import VALID_URLS_IN_GOOGLE_HOME, VALID_URLS_IN_SAMPLE_HOME
-from sync.url_parser import URLParser
 
 
 class TestURLParser(TestCase):
@@ -138,7 +138,6 @@ class TestURLParser(TestCase):
                                    'Base URL not set before asking to parse the content of https://www.google.it/.',
                                    parser.parse_url, 'https://www.google.it/')
         del parser
-
 
 if __name__ == '__main__':
     main()

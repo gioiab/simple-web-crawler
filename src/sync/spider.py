@@ -1,6 +1,7 @@
-import json, logging
+import json
+import logging
 
-from sync.url_parser import URLParser
+from src.sync.url_parser import URLParser
 
 
 class Spider:
