@@ -1,8 +1,8 @@
-import time
-import logging
 import argparse
+import logging
+import time
 
-from sync.spider import Spider
+from src.sync.spider import Spider
 
 
 def main():
