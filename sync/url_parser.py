@@ -35,8 +35,12 @@ class URLParser:
         :param url: the input URL that needs to be validated
         :return: True if the URL is valid, False otherwise
         """
-        # The following doesn't take into account the scheme when checking the validity
-        return urlsplit(self.base_url).netloc == urlsplit(url).netloc
+        base_url_split = urlsplit(self.base_url)
+        current_url_split = urlsplit(url)
+        # The following doesn't take into account the scheme when checking the validity and checks
+        # that the two network location paths are equal. The path part should not be equal in order
+        # to discard urls which are completely equal to the base one
+        return current_url_split.netloc == base_url_split.netloc and base_url_split.path != current_url_split.path
 
     def get_valid_linked_urls(self, page):
         """
