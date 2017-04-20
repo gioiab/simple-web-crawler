@@ -45,13 +45,13 @@ class Spider:
             # Gets the first URL and pop it from the queue
             current_url = pages_to_visit.pop(0)
             if enable_logging:
-                logging.info('Crawling URL: {}'.format(current_url))
+                logging.info('Started crawling URL: {}'.format(current_url))
             # If the current URL has not been already visited...
             if current_url not in already_visited:
                 # Gets it's static assets and the links that should be subsequently crawled
                 static_assets, links_to_follow = self.url_parser.parse_url(current_url)
                 if enable_logging:
-                    logging.info('Crawled URL: {} - Found {} static assets and {} links to follow'
+                    logging.info('Finished crawling URL: {} - Found {} static assets and {} links to follow'
                                  .format(current_url, len(static_assets), len(static_assets)))
                 # Builds up incrementally the results
                 results.append({'url': current_url, 'assets': static_assets})
