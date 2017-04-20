@@ -1,8 +1,8 @@
 import logging
+import urllib.request
+import urllib.error
+import urllib.parse
 from lxml import html
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen, Request
-from urllib.parse import urljoin, urlsplit
 
 
 class URLParser:
@@ -27,22 +27,25 @@ class URLParser:
         """
         self.base_url = base_url
 
-    def is_a_valid_url(self, url):
+    def _is_a_valid_url(self, url):
         """
         Determines if a URL is valid or not. An input URL is defined to be valid if it's
-        network location part is equal to the one of the base_url.
+        network location part is equal to the one of the base_url. This method doesn't make
+        any other check on the validity of the URL.
 
         :param url: the input URL that needs to be validated
         :return: True if the URL is valid, False otherwise
         """
-        base_url_split = urlsplit(self.base_url)
-        current_url_split = urlsplit(url)
+        if not self.base_url:
+            raise ValueError('Base URL not set before asking to parse the content of {}.'.format(url))
+        base_url_split = urllib.parse.urlsplit(self.base_url)
+        current_url_split = urllib.parse.urlsplit(url)
         # The following doesn't take into account the scheme when checking the validity and checks
         # that the two network location paths are equal. The path part should not be equal in order
         # to discard urls which are completely equal to the base one
         return current_url_split.netloc == base_url_split.netloc and base_url_split.path != current_url_split.path
 
-    def get_valid_linked_urls(self, page):
+    def _get_valid_linked_urls(self, page):
         """
         Given a HTML page as a string, gets all the valid linked URLs in it.
 
@@ -53,12 +56,25 @@ class URLParser:
         links = html.iterlinks(page)
         # Merges the base_url with each url found in the page to bring relative URLs to absolute
         # Note: absolute URLs won't be affected, they will stay the same
-        linked_urls = [urljoin(self.base_url, link[2]) for link in links]
+        linked_urls = [urllib.parse.urljoin(self.base_url, link[2]) for link in links]
         # Filters and gets only the valid URLs
-        valid_linked_urls = [linked_url for linked_url in linked_urls if self.is_a_valid_url(linked_url)]
+        valid_linked_urls = [linked_url for linked_url in linked_urls if self._is_a_valid_url(linked_url)]
         return valid_linked_urls
 
-    def get_assets(self, page):
+    @staticmethod
+    def _send_http_request(url, method):
+        """
+        Given an URL and a method, send the related HTTP request and returns the response.
+
+        :param url: input URL
+        :param method: HTTP method
+        :return: the related HTTP response
+        """
+        request = urllib.request.Request(url, method=method)
+        response = urllib.request.urlopen(request)
+        return response
+
+    def _get_assets(self, page):
         """
         Given an HTML page as a string, returns its static and non-static assets.
 
@@ -66,21 +82,20 @@ class URLParser:
         :return: the tuple (static_assets, links_to_follow) where the former element represents the
         list of static assets found while the latter is a list of non-static assets found in the page.
         """
-        valid_linked_urls = self.get_valid_linked_urls(page)
+        valid_linked_urls = self._get_valid_linked_urls(page)
         static_assets = []
         links_to_follow = []
         # Checks what a valid URLs contains by sending HEAD requests...
         for valid_url in valid_linked_urls:
-            request = Request(valid_url, method="HEAD")
             try:
-                response = urlopen(request)
+                response = self._send_http_request(valid_url, method='HEAD')
                 # Gets the real URL in case of redirect
                 actual_url = response.geturl()
                 if 'text/html' in response.info()['Content-Type']:
                     links_to_follow.append(actual_url)
                 else:
                     static_assets.append(actual_url)
-            except HTTPError as http_err:
+            except urllib.error.HTTPError as http_err:
                 logging.error('HTTPError returned in sending a HEAD request to {} - HTTP code {}'
                               .format(actual_url, http_err.code))
                 continue
@@ -95,19 +110,22 @@ class URLParser:
         :return: the tuple (static_assets, links_to_follow) where the former element represents the
         list of static assets found while the latter is a list of non-static assets found in the page.
         """
+        if not self.base_url:
+            raise ValueError('Base URL not set before asking to parse the content of {}.'.format(url))
         try:
             # Fetches the page at the given URL in a synchronous way
-            page = urlopen(url).read().decode("utf-8")
-        except HTTPError as http_err:
+            http_response = self._send_http_request(url, method="GET")
+            page = http_response.read().decode("utf-8")
+        except urllib.error.HTTPError as http_err:
             if self.enable_logging:
                 logging.error('HTTPError returned in fetching the content for {} - HTTP code {}'
                               .format(url, http_err.code))
             return [], []
-        except URLError as url_err:
+        except urllib.error.URLError as url_err:
             if self.enable_logging:
                 logging.error('URLError returned for {}'.format(url))
                 logging.error(url_err)
             return [], []
         else:
             # Gets the assets of the page
-            return self.get_assets(page)
+            return self._get_assets(page)
