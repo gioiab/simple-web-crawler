@@ -1,6 +1,6 @@
 # Simple Web Crawler
 
-# Problem
+## Problem
 Write a simple (not concurrent) web crawler. Given a starting URL, it should visit every reachable
 page under that domain, and should not cross subdomains. For example when crawling “www.google.com”
 it would not crawl “mail.google.com”. For each page, it should determine the URLs of every static
