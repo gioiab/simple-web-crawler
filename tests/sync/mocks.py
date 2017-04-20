@@ -45,9 +45,9 @@ def mocked_http_response_get(*args):
     return MockResponse({}, 404)
 
 
-def mocked_parser(*args):
+def mocked_parse_url(*args):
     """
-    This method is used by the mock to replace the URLParser object.
+    This method is used to mock the parse_url method of the URLParser object.
 
     :param args: the input arguments
     :return: the mocked object

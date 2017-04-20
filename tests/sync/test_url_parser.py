@@ -121,11 +121,6 @@ class TestURLParser(TestCase):
         self.assertEqual(response.status_code, 200)
         del parser
 
-    # @patch('sync.url_parser.URLParser._get_valid_linked_urls', autospec=True)
-    # @patch('sync.url_parser.URLParser._send_http_request')
-    # def test_get_assets(self, mock_urls, mock_request):
-    #     pass
-
     def test_parse_url_with_missing_base_url(self):
         """
         Tests the parse_url method when no base_url has been previously fed to the parser.

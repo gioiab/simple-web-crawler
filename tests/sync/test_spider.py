@@ -11,7 +11,7 @@ class TestSpider(TestCase):
     Collection of test cases for the Spider class.
     """
 
-    @patch('src.sync.url_parser.URLParser.parse_url', side_effect=mocks.mocked_parser)
+    @patch('src.sync.url_parser.URLParser.parse_url', side_effect=mocks.mocked_parse_url)
     def test_crawl_one(self, mock_parse_url):
         """
         Tests the crawl method for max_urls=1.
@@ -23,7 +23,7 @@ class TestSpider(TestCase):
         self.assertEqual(current_json_response, expected_json_response)
         del spider
 
-    @patch('src.sync.url_parser.URLParser.parse_url', side_effect=mocks.mocked_parser)
+    @patch('src.sync.url_parser.URLParser.parse_url', side_effect=mocks.mocked_parse_url)
     def test_crawl_two(self, mock_parse_url):
         """
         Tests the crawl method for max_urls=2.
@@ -38,7 +38,7 @@ class TestSpider(TestCase):
         self.assertEqual(current_json_response, expected_json_response)
         del spider
 
-    @patch('src.sync.url_parser.URLParser.parse_url', side_effect=mocks.mocked_parser)
+    @patch('src.sync.url_parser.URLParser.parse_url', side_effect=mocks.mocked_parse_url)
     def test_crawl_three(self, mock_parse_url):
         """
         Tests the crawl method for max_urls=3.
