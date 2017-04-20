@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase, main
 from unittest.mock import patch
 
@@ -96,11 +97,13 @@ class TestURLParser(TestCase):
         """
         Tests the _get_valid_linked_urls method on knwon samples.
         """
+        current_file_path = os.path.dirname(os.path.realpath(__file__))
+        path_to_static_folder = os.path.join(current_file_path, '../static')
         self.template_test_get_valid_linked_urls('https://www.google.it/',
-                                                 './../static/google.html',
+                                                 os.path.join(path_to_static_folder, 'google.html'),
                                                  VALID_URLS_IN_GOOGLE_HOME)
         self.template_test_get_valid_linked_urls('https://www.sample.com/',
-                                                 './../static/sample.html',
+                                                 os.path.join(path_to_static_folder, 'sample.html'),
                                                  VALID_URLS_IN_SAMPLE_HOME)
 
     @patch('urllib.request.Request', side_effect=mocks.mocked_http_request)
