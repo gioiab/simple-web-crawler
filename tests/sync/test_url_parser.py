@@ -107,18 +107,85 @@ class TestURLParser(TestCase):
                                                  VALID_URLS_IN_SAMPLE_HOME)
 
     @patch('urllib.request.Request', side_effect=mocks.mocked_http_request)
-    @patch('urllib.request.urlopen', side_effect=mocks.mocked_http_response_get)
+    @patch('urllib.request.urlopen', side_effect=mocks.mocked_http_response)
     def test_send_http_request(self, mock_req, mock_resp):
         """
         Tests the _send_http_request method.
         """
-        parser = self.get_sample_parser('http://someurl.com')
-        response = parser._send_http_request('http://someurl.com/test', method="GET")
-        self.assertEqual(response.data, "<html><body><a href='http://www.sample.com/test'></a></html>")
+        # Tests successful GETs
+        response = URLParser._send_http_request('http://someurl.com/test', method="GET")
+        self.assertEqual(response.url, 'http://someurl.com/test')
+        self.assertEqual(response.data, "<html><body><a href='http://someurl.com/other'></a></body></html>")
         self.assertEqual(response.status_code, 200)
-        response = parser._send_http_request('http://someotherurl.com/test', method="GET")
-        self.assertEqual(response.data, "<html><body><a href='http://www.sample.com/other'></a></html>")
+        response = URLParser._send_http_request('http://someotherurl.com/test', method="GET")
+        self.assertEqual(response.url, 'http://someotherurl.com/test')
+        self.assertEqual(response.data, "<html><body><a href='http://someotherurl.com/other'></a></body></html>")
         self.assertEqual(response.status_code, 200)
+        # Tests 404
+        response = URLParser._send_http_request('http://errorurl.com/', method="GET")
+        self.assertEqual(response.url, 'http://errorurl.com/')
+        self.assertEqual(response.data, "<html><body>404 Error<body></html>")
+        self.assertEqual(response.status_code, 404)
+        # Tests successful HEADs
+        response = URLParser._send_http_request('http://someurl.com/test', method="HEAD")
+        self.assertEqual(response.url, 'http://someurl.com/test')
+        self.assertEqual(response.data, "")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Content-Type'], 'text/html')
+        response = URLParser._send_http_request('http://someotherurl.com/test.png', method="HEAD")
+        self.assertEqual(response.url, 'http://someotherurl.com/test.png')
+        self.assertEqual(response.data, "")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers['Content-Type'], 'image/png')
+        # Tests 404 HEAD
+        response = URLParser._send_http_request('http://errorurl.com/', method="HEAD")
+        self.assertEqual(response.url, 'http://errorurl.com/')
+        self.assertEqual(response.data, "<html><body>404 Error<body></html>")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.headers['Content-Type'], 'text/html')
+        # Tests different request types
+        response = URLParser._send_http_request('http://errorurl.com/', method="PUT")
+        self.assertEqual(response.url, 'http://errorurl.com/')
+        self.assertEqual(response.data, "<html><body>500 Internal Server Error</body></html>")
+        self.assertEqual(response.status_code, 500)
+
+    @patch('src.sync.url_parser.URLParser._get_valid_linked_urls', side_effect=mocks.mocked_get_valid_linked_urls)
+    @patch('urllib.request.Request', side_effect=mocks.mocked_http_request)
+    @patch('urllib.request.urlopen', side_effect=mocks.mocked_http_response)
+    def test_get_assets(self, mock_urls, mock_req, mock_resp):
+        """
+        Tests the _get_assets method.
+        """
+        parser = self.get_sample_parser('http://someurl.com/')
+        assets = parser._get_assets("<html><body><a href='http://someurl.com/other'></a></body></html>")
+        self.assertEqual(assets[0], [])
+        self.assertEqual(assets[1], ['http://someurl.com/other'])
+        assets = parser._get_assets("<html><body><a href='http://someotherurl.com/other'></a></body></html>")
+        self.assertEqual(assets[0], [])
+        self.assertEqual(assets[1], ['http://someotherurl.com/other'])
+        assets = parser._get_assets("<html><body>404 Error<body></html>")
+        self.assertEqual(assets[0], [])
+        self.assertEqual(assets[1], [])
+        del parser
+
+    @patch('urllib.request.Request', side_effect=mocks.mocked_http_request)
+    @patch('urllib.request.urlopen', side_effect=mocks.mocked_http_response)
+    @patch('src.sync.url_parser.URLParser._get_assets', side_effect=mocks.mocked_get_assets)
+    def test_parse_url(self, mock_req, mock_resp, mock_assets):
+        """
+        Tests the _parse_url method.
+        """
+        parser = self.get_sample_parser('http://someurl.com/')
+        static_assets, links_to_follow = parser.parse_url('http://someurl.com/test')
+        self.assertEqual(static_assets, [])
+        self.assertEqual(links_to_follow, ['http://someurl.com/other'])
+        parser.set_base_url('http://someotherurl.com/')
+        static_assets, links_to_follow = parser.parse_url('http://someotherurl.com/test')
+        self.assertEqual(static_assets, [])
+        self.assertEqual(links_to_follow, ['http://someotherurl.com/other'])
+        static_assets, links_to_follow = parser.parse_url('http://errorurl.com/')
+        self.assertEqual(static_assets, [])
+        self.assertEqual(links_to_follow, [])
         del parser
 
     def test_parse_url_with_missing_base_url(self):

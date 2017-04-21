@@ -1,3 +1,5 @@
+import urllib.error
+
 class MockHTTPRequest:
     """
     Defines the mock for a generic urllib.request.Request.
@@ -11,10 +13,20 @@ class MockHTTPResponse:
     """
     Defines the mock for a generic urlopen response.
     """
-    def __init__(self, data, status_code, headers={}):
+    def __init__(self, url, data, status_code, headers={}):
+        self.url = url
         self.data = data
         self.status_code = status_code
         self.headers = headers
+
+    def read(self):
+        return self.data
+
+    def geturl(self):
+        return self.url
+
+    def info(self):
+        return self.headers
 
 
 def mocked_http_request(*args, **kwargs):
@@ -28,21 +40,72 @@ def mocked_http_request(*args, **kwargs):
     return MockHTTPRequest(args[0], kwargs['method'])
 
 
-def mocked_http_response_get(*args):
+def mocked_http_response(*args):
     """
     This method is used by the mock to replace urllib.request.urlopen.
 
-    :param args: the input arguments of the urllib.request.urlopen call.
+    :param args: the input arguments of the urllib.request.urlopen call
     :return: the mocked response
     """
     mock_request = args[0]
     assert isinstance(mock_request, MockHTTPRequest)
-    if mock_request.url == 'http://someurl.com/test':
-        return MockHTTPResponse("<html><body><a href='http://www.sample.com/test'></a></html>", 200)
+    if mock_request.url == 'http://someurl.com/test' and mock_request.method == 'GET':
+        return MockHTTPResponse('http://someurl.com/test',
+                                "<html><body><a href='http://someurl.com/other'></a></body></html>",
+                                200,
+                                {'Content-Type': 'text/html'})
+    elif mock_request.url == 'http://someotherurl.com/test' and mock_request.method == 'GET':
+        return MockHTTPResponse('http://someotherurl.com/test',
+                                "<html><body><a href='http://someotherurl.com/other'></a></body></html>",
+                                200,
+                                {'Content-Type': 'text/html'})
+    elif mock_request.url == 'http://someurl.com/test' and mock_request.method == 'HEAD':
+        return MockHTTPResponse('http://someurl.com/test', "", 200, {'Content-Type': 'text/html'})
+    elif mock_request.url == 'http://someotherurl.com/test.png' and mock_request.method == 'HEAD':
+        return MockHTTPResponse('http://someotherurl.com/test.png', "", 200, {'Content-Type': 'image/png'})
+    elif mock_request.method == 'GET' or mock_request.method == 'HEAD':
+        # Other URLs but always GET method
+        return MockHTTPResponse(mock_request.url, "<html><body>404 Error<body></html>",
+                                404, {'Content-Type': 'text/html'})
     else:
-        return MockHTTPResponse("<html><body><a href='http://www.sample.com/other'></a></html>", 200)
+        return MockHTTPResponse(mock_request.url, "<html><body>500 Internal Server Error</body></html>",
+                                500, {'Content-Type': 'text/html'})
 
-    return MockResponse({}, 404)
+
+def mocked_get_valid_linked_urls(*args):
+    """
+    This method is used to mock the _get_valid_linked_urls method of the URLParser object.
+
+    :param args: the input arguments
+    :return: the mocked response
+    """
+    response = args[0]
+    if response == "<html><body><a href='http://someurl.com/other'></a></body></html>":
+        return ['http://someurl.com/other']
+    elif response == "<html><body><a href='http://someotherurl.com/other'></a></body></html>":
+        return ['http://someotherurl.com/other']
+    elif response == "<html><body>404 Error<body></html>":
+        return []
+    else:  # response == "<html><body>500 Internal Server Error</body></html>":
+        return []
+
+
+def mocked_get_assets(*args):
+    """
+    This method is used to mock the _get_assets method of the URLParser object.
+
+    :param args: the input arguments
+    :return: the mocked response
+    """
+    response = args[0]
+    if response == "<html><body><a href='http://someurl.com/other'></a></body></html>":
+        return [], ['http://someurl.com/other']
+    elif response == "<html><body><a href='http://someotherurl.com/other'></a></body></html>":
+        return [], ['http://someotherurl.com/other']
+    elif response == "<html><body>404 Error<body></html>":
+        return [], []
+    else:  # response == "<html><body>500 Internal Server Error</body></html>":
+        return [], []
 
 
 def mocked_parse_url(*args):

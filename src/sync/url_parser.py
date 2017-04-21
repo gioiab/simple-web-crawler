@@ -115,7 +115,7 @@ class URLParser:
         try:
             # Fetches the page at the given URL in a synchronous way
             http_response = self._send_http_request(url, method="GET")
-            page = http_response.read().decode("utf-8")
+            page = http_response.read()
         except urllib.error.HTTPError as http_err:
             if self.enable_logging:
                 logging.error('HTTPError returned in fetching the content for {} - HTTP code {}'
