@@ -96,8 +96,9 @@ class URLParser:
                 else:
                     static_assets.append(actual_url)
             except urllib.error.HTTPError as http_err:
-                logging.error('HTTPError returned in sending a HEAD request to {} - HTTP code {}'
-                              .format(actual_url, http_err.code))
+                if self.enable_logging:
+                    logging.error('HTTPError returned in sending a HEAD request to {} - HTTP code {}'
+                                  .format(actual_url, http_err.code))
                 continue
         return static_assets, links_to_follow
 
