@@ -15,8 +15,8 @@ def main():
     parser.add_argument('website', help='the website you want to start the crawling from')
     parser.add_argument('-m', dest='max_pages', type=int, default=5,
                         help='the maximum number of pages that will be visited')
-    parser.add_argument('-l', dest='show_logs', type=bool, default=True,
-                        help='a flag that tells if logs should be shown')
+    parser.add_argument('-l', dest='hide_logs', action='store_true', default=False,
+                        help='a flag that tells if logs should be hidden')
     parser.add_argument('-s', dest='path_to_file', type=str,
                         help='tells if the results should be saved to file and provides the full path for saving')
     args = parser.parse_args()
@@ -26,8 +26,8 @@ def main():
     # Storing the current time
     start_time = time.time()
     # Setting up the Spider for crawling
-    spider = Spider()
-    result = spider.crawl(args.website, args.max_pages, args.show_logs)
+    spider = Spider(enable_logging=not args.hide_logs)
+    result = spider.crawl(args.website, args.max_pages)
     print('Result of the crawling for {} returned in {:.2f} seconds:'.format(args.website, time.time()-start_time))
     print(result)
     # In addition, saves the result to a file if needed

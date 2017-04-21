@@ -9,14 +9,18 @@ class Spider:
     The Spider class implements the main crawling functionality.
     """
 
-    def __init__(self):
+    def __init__(self, enable_logging=True):
         """
         Constructor. Simply gets an instance of the URLParser object in
         order to perform the analysis on the links.
-        """
-        self.url_parser = URLParser()
 
-    def crawl(self, start_url, max_pages, enable_logging=True):
+        :param enable_logging: a flag being True if logs should be displayed during the
+        crawling, False otherwise.
+        """
+        self.enable_logging = enable_logging
+        self.url_parser = URLParser(enable_logging=enable_logging)
+
+    def crawl(self, start_url, max_pages):
         """
         Implements the crawling functionality: given a starting URL and a maximum
         number of total pages that should be visited, visits every reachable page
@@ -27,8 +31,6 @@ class Spider:
 
         :param start_url: the URL from which the crawling starts
         :param max_pages: the maximum number of pages that can be visited
-        :param enable_logging: a flag being True if logs should be displayed during the
-        crawling, False otherwise.
         :return: a json object containing the URLs visited together with their static
         assets.
         """
@@ -45,13 +47,13 @@ class Spider:
         while pages_to_visit and len(already_visited) < max_pages:
             # Gets the first URL and pop it from the queue
             current_url = pages_to_visit.pop(0)
-            if enable_logging:
+            if self.enable_logging:
                 logging.info('Started crawling URL: {}'.format(current_url))
             # If the current URL has not been already visited...
             if current_url not in already_visited:
                 # Gets it's static assets and the links that should be subsequently crawled
                 static_assets, links_to_follow = self.url_parser.parse_url(current_url)
-                if enable_logging:
+                if self.enable_logging:
                     logging.info('Finished crawling URL: {} - Found {} static assets and {} links to follow'
                                  .format(current_url, len(static_assets), len(static_assets)))
                 # Builds up incrementally the results
