@@ -31,8 +31,6 @@ For example:
 
 ## Solution
 
-The solution
-
 The solution has been implemented in `python3.5` and it's guaranteed to work on that python version. The project has
 been organized into two main folders. The `src` folder contains the `spider` and `url_parser` modules which implement
 the crawling logic while the folder `tests` contains the unit tests related to the modules in `src`. Finally the main
