@@ -15,7 +15,8 @@ class TestURLParser(TestCase):
     def assert_raise_with_msg(self, error, error_message, f, *args):
         """
         Checks that the given error/exception is thrown along with the given error_message when f is executed.
-        :param error: the execption that should be raised
+
+        :param error: the exception that should be raised
         :param error_message: the expected error message
         :param f: the function raising the exception
         :param args: the function arguments
